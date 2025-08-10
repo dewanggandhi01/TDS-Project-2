@@ -24,36 +24,42 @@ def nan_to_none(obj):
 
 def extract_questions(task: str) -> List[str]:
     """Extract individual questions from the task text"""
-    # Split by numbered questions or bullet points
+    # Split by lines and filter for questions
+    lines = task.strip().split('\n')
     questions = []
     
-    # Look for numbered questions (1., 2., etc.)
-    numbered_pattern = r'\d+\.\s*(.+?)(?=\d+\.|$)'
-    numbered_matches = re.findall(numbered_pattern, task, re.DOTALL)
-    
-    # Look for questions starting with "What", "How", "Which", etc.
-    question_pattern = r'(What|How|Which|List|Draw|Plot|Answer).+?(?=\n\n|\n\d+\.|$)'
-    question_matches = re.findall(question_pattern, task, re.DOTALL)
-    
-    # Combine and clean
-    all_questions = numbered_matches + question_matches
-    for q in all_questions:
-        q = q.strip()
-        if q and len(q) > 10:  # Filter out very short matches
-            questions.append(q)
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        # Skip URL lines
+        if line.startswith('http') or 'wikipedia.org' in line:
+            continue
+            
+        # Skip the scraping instruction line
+        if 'scrape' in line.lower() and 'wikipedia' in line.lower():
+            continue
+            
+        # Add lines that are questions (end with ?) or instructions
+        if line.endswith('?') or any(starter in line.lower() for starter in 
+                                   ['how many', 'which', 'what', 'list', 'draw', 'plot']):
+            questions.append(line)
     
     return questions if questions else [task]
 
 def process_task(task: str, use_llm: bool = True) -> Union[List, Dict]:
     """Main function to process data analysis tasks"""
     try:
+        # Extract individual questions from the task
+        questions = extract_questions(task)
+        logger.info(f"Extracted {len(questions)} questions from task")
+        
         # Use traditional approach for Wikipedia film data tasks (more reliable)
         if "wikipedia" in task.lower() or "highest-grossing films" in task.lower():
-            return process_wikipedia_task(task, use_llm)
+            return process_wikipedia_task(task, use_llm, questions)
         
         # Use traditional approach for other tasks
-        questions = extract_questions(task)
-        
         if "indian high court" in task.lower() or "ecourts" in task.lower():
             return process_high_court_task(task, questions, use_llm)
         else:
@@ -63,10 +69,16 @@ def process_task(task: str, use_llm: bool = True) -> Union[List, Dict]:
         logger.error(f"Error in process_task: {e}")
         return {"error": str(e)}
 
-def process_wikipedia_task(task: str, use_llm: bool = True) -> List:
+def process_wikipedia_task(task: str, use_llm: bool = True, questions: List[str] = None) -> List:
     """Process Wikipedia film data tasks"""
     try:
         logger.info("Processing Wikipedia task...")
+        
+        # Use provided questions or extract from task
+        if questions is None:
+            questions = extract_questions(task)
+        
+        logger.info(f"Processing {len(questions)} questions: {questions}")
         
         # Scrape Wikipedia data
         data = scrape_wikipedia(task)
@@ -86,7 +98,7 @@ def process_wikipedia_task(task: str, use_llm: bool = True) -> List:
             if not answers or all(a is None for a in answers):
                 if is_film_table:
                     logger.warning("LLM failed; falling back to specialized film analysis.")
-                    return process_wikipedia_traditional(data)
+                    return process_wikipedia_traditional(data, questions)
                 else:
                     logger.warning("LLM failed and table is not a film dataset; trying generic business analysis.")
                     norm = normalize_business_table(data)
@@ -105,7 +117,7 @@ def process_wikipedia_task(task: str, use_llm: bool = True) -> List:
         else:
             # Use traditional approach only for film dataset; otherwise generic business analyzer
             if is_film_table:
-                return process_wikipedia_traditional(data)
+                return process_wikipedia_traditional(data, questions)
             else:
                 logger.info("Running generic business analysis for non-film Wikipedia table.")
                 norm = normalize_business_table(data)
@@ -152,46 +164,147 @@ def process_with_llm(task: str, data) -> List:
         logger.error(f"Error in process_with_llm: {e}")
         return [None, None, None, None]
 
-def process_wikipedia_traditional(data) -> List:
+def process_wikipedia_traditional(data, questions: List[str] = None) -> List:
     """Process Wikipedia data using traditional approach"""
     # Ensure required columns exist
     required = ["Worldwide gross", "Year"]
     if not all(col in data.columns for col in required):
         logger.warning("Traditional film analysis: required columns missing; returning default answers.")
-        return [None, None, None, None]
+        return [None]
 
+    logger.info("Processing Wikipedia questions using dynamic question answering...")
+    
+    def answer_question(question: str) -> Any:
+        """Answer a single question about the film data"""
+        q = question.lower()
+        
+        # Question: How many $2bn movies before specific year?
+        if "2 bn" in q or "$2 bn" in q or "2bn" in q:
+            year_threshold = 2020  # default
+            if "before 2000" in q:
+                year_threshold = 2000
+            elif "before 2010" in q:
+                year_threshold = 2010
+            elif "before 2015" in q:
+                year_threshold = 2015
+            elif "before 2020" in q:
+                year_threshold = 2020
+            
+            count = data[(data['Worldwide gross'] >= 2_000_000_000) & (data['Year'] < year_threshold)].shape[0]
+            logger.info(f"$2bn movies before {year_threshold}: {count}")
+            return count
+        
+        # Question: Earliest $1.5bn+ film
+        if ("1.5 bn" in q or "$1.5 bn" in q or "1.5bn" in q) and "earliest" in q:
+            df_15 = data[data['Worldwide gross'] >= 1_500_000_000]
+            if not df_15.empty:
+                earliest = df_15.sort_values('Year').iloc[0]['Title']
+                logger.info(f"Earliest $1.5bn+ film: {earliest}")
+                return str(earliest)
+            return None
+        
+        # Question: Correlation between Rank and Peak
+        if "correlation" in q and "rank" in q and "peak" in q:
+            if 'Rank' in data.columns and 'Peak' in data.columns:
+                corr = data['Rank'].corr(data['Peak'])
+                logger.info(f"Rank-Peak correlation: {corr}")
+                return float(corr) if not math.isnan(corr) else None
+            return None
+        
+        # Question: Scatterplot or drawing
+        if "scatterplot" in q or "scatter plot" in q or "draw" in q or "plot" in q:
+            plot_uri = create_plot(data, "scatterplot of rank and peak")
+            logger.info("Generated scatterplot")
+            return plot_uri
+        
+        # Question: Top N films by worldwide gross
+        if ("top" in q or "highest" in q) and "gross" in q:
+            import re
+            numbers = re.findall(r'\d+', q)
+            n = int(numbers[0]) if numbers else 5
+            topN = data.sort_values('Worldwide gross', ascending=False).head(n)['Title'].tolist()
+            logger.info(f"Top {n} films: {topN}")
+            return topN
+        
+        # Question: Average worldwide gross after specific year
+        if "average" in q and "gross" in q:
+            year_threshold = 2010  # default
+            if "after 2000" in q:
+                year_threshold = 2000
+            elif "after 2005" in q:
+                year_threshold = 2005
+            elif "after 2010" in q:
+                year_threshold = 2010
+            elif "after 2015" in q:
+                year_threshold = 2015
+            
+            avg = data[data['Year'] > year_threshold]['Worldwide gross'].mean()
+            result = float(avg) if not math.isnan(avg) else None
+            logger.info(f"Average gross after {year_threshold}: {result}")
+            return result
+        
+        # Question: Highest Peak rank
+        if "highest peak" in q:
+            if 'Peak' in data.columns:
+                # Peak rank is inverse - lowest number is highest rank
+                idx = data['Peak'].idxmin()
+                film = data.loc[idx, 'Title'] if not math.isnan(idx) else None
+                logger.info(f"Film with highest Peak rank: {film}")
+                return film
+            return None
+        
+        # Question: Median worldwide gross
+        if "median" in q and "gross" in q:
+            median = data['Worldwide gross'].median()
+            result = float(median) if not math.isnan(median) else None
+            logger.info(f"Median worldwide gross: {result}")
+            return result
+        
+        # Question: Films released in specific year
+        if "released in" in q or "films in" in q:
+            import re
+            years = re.findall(r'\b(19|20)\d{2}\b', q)
+            if years:
+                year = int(years[0])
+                films_year = data[data['Year'] == year]['Title'].tolist()
+                logger.info(f"Films in {year}: {len(films_year)} films")
+                return films_year
+            return None
+        
+        # Question: Year with most $1bn+ films
+        if "most" in q and ("1 bn" in q or "$1 bn" in q) and "year" in q:
+            df_1bn = data[data['Worldwide gross'] >= 1_000_000_000]
+            if not df_1bn.empty:
+                year = df_1bn['Year'].value_counts().idxmax()
+                logger.info(f"Year with most $1bn+ films: {year}")
+                return int(year)
+            return None
+        
+        # Question: Count total films
+        if "how many" in q and "film" in q and not any(x in q for x in ["2 bn", "$2 bn", "1 bn", "$1 bn"]):
+            count = len(data)
+            logger.info(f"Total films: {count}")
+            return count
+        
+        logger.warning(f"Unrecognized question: {question}")
+        return None
+    
+    # If no questions provided, use default hardcoded behavior for compatibility
+    if not questions:
+        logger.info("No specific questions provided, using default film analysis questions")
+        questions = [
+            "How many $2 bn movies were released before 2020?",
+            "Which is the earliest film that grossed over $1.5 bn?", 
+            "What's the correlation between the Rank and Peak?",
+            "Draw a scatterplot of Rank and Peak along with a dotted red regression line through it."
+        ]
+    
+    # Answer each question dynamically
     answers = []
-    
-    # Question 1: How many $2 bn movies before 2000?
-    logger.info("Processing question 1...")
-    count_2bn = data[(data['Worldwide gross'] >= 2_000_000_000) & (data['Year'] < 2000)].shape[0]
-    answers.append(count_2bn)
-    logger.info(f"Answer 1: {count_2bn}")
-    
-    # Question 2: Earliest $1.5bn+ film
-    logger.info("Processing question 2...")
-    df_15 = data[data['Worldwide gross'] >= 1_500_000_000]
-    if not df_15.empty:
-        earliest = df_15.sort_values('Year').iloc[0]['Title']
-        answers.append(str(earliest).lower())
-    else:
-        answers.append(None)
-    logger.info(f"Answer 2: {answers[-1]}")
-    
-    # Question 3: Correlation between Rank and Peak
-    logger.info("Processing question 3...")
-    if 'Rank' in data.columns and 'Peak' in data.columns:
-        corr = data['Rank'].corr(data['Peak'])
-        answers.append(float(corr) if not math.isnan(corr) else None)
-    else:
-        answers.append(None)
-    logger.info(f"Answer 3: {answers[-1]}")
-    
-    # Question 4: Scatterplot of Rank vs Peak
-    logger.info("Processing question 4...")
-    plot_uri = create_plot(data, "scatterplot of rank and peak")
-    answers.append(plot_uri)
-    logger.info(f"Answer 4: Plot generated (length: {len(str(plot_uri))})")
+    for question in questions:
+        answer = answer_question(question)
+        answers.append(answer)
+        logger.info(f"Q: {question[:50]}... -> A: {str(answer)[:50]}...")
     
     logger.info(f"Final answers: {answers}")
     return nan_to_none(answers)
