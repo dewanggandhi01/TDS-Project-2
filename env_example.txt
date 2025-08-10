@@ -1,0 +1,25 @@
+# OpenAI API Configuration
+# Get your API key from: https://platform.openai.com/api-keys
+# OpenAI Configuration (Required for LLM features)
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_MODEL=gpt-4
+OPENAI_MAX_TOKENS=2000
+OPENAI_TEMPERATURE=0.1
+
+# Server Configuration
+PORT=8000
+HOST=0.0.0.0
+LOG_LEVEL=info
+
+# Environment
+ENVIRONMENT=productionyour_openai_api_key_here
+
+# Server Configuration
+HOST=127.0.0.1
+PORT=8000
+LOG_LEVEL=info
+
+# Optional: Model Configuration
+OPENAI_MODEL=gpt-4
+OPENAI_MAX_TOKENS=2000
+OPENAI_TEMPERATURE=0.1 

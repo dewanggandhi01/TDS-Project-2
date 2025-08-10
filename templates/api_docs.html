@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - Data Analyst Agent v2.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 2rem;
+        }
+        .endpoint-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            border-left: 5px solid #667eea;
+        }
+        .method-badge {
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 0.3rem 0.6rem;
+            border-radius: 8px;
+        }
+        .method-get { background: #28a745; color: white; }
+        .method-post { background: #007bff; color: white; }
+        .code-block {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            border-left: 4px solid #667eea;
+        }
+        .nav-link {
+            color: #667eea;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+        }
+        .nav-link:hover {
+            background: #f8f9fa;
+        }
+        .nav-link.active {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="main-container">
+                    <!-- Header -->
+                    <div class="header text-center">
+                        <h1><i class="fas fa-book me-3"></i>API Documentation</h1>
+                        <p class="mb-0">Data Analyst Agent v2.0 - Complete API Reference</p>
+                        <a href="/" class="btn btn-outline-light mt-3">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Web Interface
+                        </a>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="p-4">
+                        <div class="row">
+                            <!-- Navigation -->
+                            <div class="col-md-3">
+                                <div class="sticky-top" style="top: 2rem;">
+                                    <h5 class="fw-bold mb-3">Quick Navigation</h5>
+                                    <nav class="nav flex-column">
+                                        <a class="nav-link" href="#overview">Overview</a>
+                                        <a class="nav-link" href="#endpoints">Endpoints</a>
+                                        <a class="nav-link" href="#examples">Examples</a>
+                                        <a class="nav-link" href="#response-formats">Response Formats</a>
+                                        <a class="nav-link" href="#error-handling">Error Handling</a>
+                                        <a class="nav-link" href="#deployment">Deployment</a>
+                                    </nav>
+                                </div>
+                            </div>
+
+                            <!-- Main Content -->
+                            <div class="col-md-9">
+                                <!-- Overview -->
+                                <section id="overview" class="mb-5">
+                                    <h3 class="fw-bold mb-3">Overview</h3>
+                                    <p>The Data Analyst Agent API is a powerful tool for automated data analysis. It can:</p>
+                                    <ul>
+                                        <li>Scrape data from Wikipedia and other websites</li>
+                                        <li>Perform statistical analysis and correlations</li>
+                                        <li>Generate visualizations and plots</li>
+                                        <li>Handle multiple data sources (Wikipedia, S3, CSV)</li>
+                                        <li>Process natural language analysis tasks</li>
+                                    </ul>
+                                </section>
+
+                                <!-- Endpoints -->
+                                <section id="endpoints" class="mb-5">
+                                    <h3 class="fw-bold mb-3">API Endpoints</h3>
+
+                                    <!-- Health Check -->
+                                    <div class="endpoint-card p-4">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <span class="method-badge method-get me-3">GET</span>
+                                            <h5 class="mb-0">Health Check</h5>
+                                        </div>
+                                        <p class="text-muted mb-3">Check if the API is running</p>
+                                        <div class="code-block">
+                                            GET /health
+                                        </div>
+                                        <h6 class="mt-3">Response:</h6>
+                                        <div class="code-block">
+{
+  "status": "healthy",
+  "service": "Data Analyst Agent v2.0"
+}
+                                        </div>
+                                    </div>
+
+                                    <!-- File Upload Analysis -->
+                                    <div class="endpoint-card p-4">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <span class="method-badge method-post me-3">POST</span>
+                                            <h5 class="mb-0">File Upload Analysis</h5>
+                                        </div>
+                                        <p class="text-muted mb-3">Upload a text file with analysis tasks</p>
+                                        <div class="code-block">
+POST /api/
+Content-Type: multipart/form-data
+
+file: question.txt
+                                        </div>
+                                        <h6 class="mt-3">Example using curl:</h6>
+                                        <div class="code-block">
+curl "http://127.0.0.1:8000/api/" -F "@data/question.txt"
+                                        </div>
+                                    </div>
+
+                                    <!-- Text Analysis -->
+                                    <div class="endpoint-card p-4">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <span class="method-badge method-post me-3">POST</span>
+                                            <h5 class="mb-0">Text Analysis</h5>
+                                        </div>
+                                        <p class="text-muted mb-3">Send analysis tasks as JSON</p>
+                                        <div class="code-block">
+POST /api/analyze
+Content-Type: application/json
+
+{
+  "url": "https://en.wikipedia.org/wiki/List_of_highest-grossing_films",
+  "task": "How many $2bn movies were released before 2020?"
+}
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- Examples -->
+                                <section id="examples" class="mb-5">
+                                    <h3 class="fw-bold mb-3">Usage Examples</h3>
+
+                                    <div class="endpoint-card p-4">
+                                        <h5 class="fw-bold mb-3">Wikipedia Film Analysis</h5>
+                                        <p>Analyze the highest-grossing films from Wikipedia:</p>
+                                        <div class="code-block">
+# Create question.txt file
+Scrape the list of highest grossing films from Wikipedia. It is at the URL: https://en.wikipedia.org/wiki/List_of_highest-grossing_films
+
+Answer the following questions and respond with a JSON array of strings containing the answer.
+
+1. How many $2 bn movies were released before 2000?
+2. Which is the earliest film that grossed over $1.5 bn?
+3. What's the correlation between the Rank and Peak?
+4. Draw a scatterplot of Rank and Peak along with a dotted red regression line through it.
+                                        </div>
+                                        <h6 class="mt-3">Expected Response:</h6>
+                                        <div class="code-block">
+[1, "Titanic", 0.485782, "data:image/png;base64,iVBORw0KG..."]
+                                        </div>
+                                    </div>
+
+                                    <div class="endpoint-card p-4">
+                                        <h5 class="fw-bold mb-3">Indian High Court Analysis</h5>
+                                        <p>Analyze Indian High Court judgment data:</p>
+                                        <div class="code-block">
+{
+  "Which high court disposed the most cases from 2019 - 2022?": "33_10",
+  "What's the regression slope of the date_of_registration - decision_date by year in the court=33_10?": 2.5,
+  "Plot the year and # of days of delay from the above question as a scatterplot with a regression line. Encode as a base64 data URI under 100,000 characters": "data:image/png;base64,iVBORw0KG..."
+}
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- Response Formats -->
+                                <section id="response-formats" class="mb-5">
+                                    <h3 class="fw-bold mb-3">Response Formats</h3>
+                                    
+                                    <div class="endpoint-card p-4">
+                                        <h5 class="fw-bold mb-3">Wikipedia Format (Array)</h5>
+                                        <p>Returns a JSON array with exactly 4 elements:</p>
+                                        <div class="code-block">
+[
+  number,           // Count or numeric result
+  string,           // Film name or text result
+  number,           // Correlation or statistical result
+  string            // Base64 encoded plot image
+]
+                                        </div>
+                                    </div>
+
+                                    <div class="endpoint-card p-4">
+                                        <h5 class="fw-bold mb-3">High Court Format (Object)</h5>
+                                        <p>Returns a JSON object with question-answer pairs:</p>
+                                        <div class="code-block">
+{
+  "Question 1": "Answer 1",
+  "Question 2": 123.45,
+  "Question 3": "data:image/png;base64,..."
+}
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- Error Handling -->
+                                <section id="error-handling" class="mb-5">
+                                    <h3 class="fw-bold mb-3">Error Handling</h3>
+                                    
+                                    <div class="endpoint-card p-4">
+                                        <h5 class="fw-bold mb-3">Common Error Responses</h5>
+                                        
+                                        <h6>400 Bad Request</h6>
+                                        <div class="code-block">
+{
+  "detail": "File must be a .txt file"
+}
+                                        </div>
+
+                                        <h6>500 Internal Server Error</h6>
+                                        <div class="code-block">
+{
+  "error": "Internal server error: No table found on the page"
+}
+                                        </div>
+
+                                        <h6>Timeout (3 minutes)</h6>
+                                        <p class="text-muted">Requests that take longer than 3 minutes will timeout.</p>
+                                    </div>
+                                </section>
+
+                                <!-- Deployment -->
+                                <section id="deployment" class="mb-5">
+                                    <h3 class="fw-bold mb-3">Deployment</h3>
+                                    
+                                    <div class="endpoint-card p-4">
+                                        <h5 class="fw-bold mb-3">Local Development</h5>
+                                        <div class="code-block">
+# Install dependencies
+pip install -r requirements.txt
+
+# Start the server
+python run_server.py
+
+# Access the API
+http://127.0.0.1:8000
+                                        </div>
+
+                                        <h5 class="fw-bold mb-3 mt-4">Production Deployment</h5>
+                                        <p>Deploy to platforms like Railway, Heroku, or Render:</p>
+                                        <div class="code-block">
+# Railway
+railway up
+
+# Heroku
+git push heroku main
+
+# Render
+# Connect GitHub repository and deploy
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Active navigation highlighting
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

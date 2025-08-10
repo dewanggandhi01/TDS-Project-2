@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Analyst Agent v2.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 2rem;
+        }
+        .task-input {
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+        .task-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+            border-left: 5px solid #667eea;
+        }
+        .loading {
+            display: none;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        .task-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-left: 4px solid #667eea;
+        }
+        .task-item:hover {
+            background: #e9ecef;
+        }
+        .remove-task {
+            color: #dc3545;
+            cursor: pointer;
+            float: right;
+        }
+        .remove-task:hover {
+            color: #c82333;
+        }
+        .plot-container {
+            text-align: center;
+            margin: 1rem 0;
+        }
+        .plot-container img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .alert {
+            border-radius: 15px;
+            border: none;
+        }
+        .progress {
+            height: 8px;
+            border-radius: 10px;
+        }
+        .example-tasks {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .example-task {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid #28a745;
+        }
+        .example-task:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="main-container">
+                    <!-- Header -->
+                    <div class="header text-center">
+                        <h1><i class="fas fa-chart-line me-3"></i>Data Analyst Agent v2.0</h1>
+                        <p class="mb-0">Intelligent data analysis with web scraping and visualization</p>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="p-4">
+                        <!-- URL Input -->
+                        <div class="mb-4">
+                            <label for="urlInput" class="form-label fw-bold">
+                                <i class="fas fa-link me-2"></i>Data Source URL (Optional)
+                            </label>
+                            <input type="url" class="form-control task-input" id="urlInput" 
+                                   placeholder="https://en.wikipedia.org/wiki/List_of_highest-grossing_films">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Leave empty if you want to analyze local data or provide tasks without scraping
+                            </div>
+                        </div>
+
+                        <!-- Task Management -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-tasks me-2"></i>Analysis Tasks
+                            </label>
+                            
+                            <!-- Add Task -->
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control task-input" id="taskInput" 
+                                       placeholder="Enter your analysis task (e.g., 'How many $2bn movies were released before 2020?')">
+                                <button class="btn btn-primary" type="button" onclick="addTask()">
+                                    <i class="fas fa-plus me-2"></i>Add Task
+                                </button>
+                            </div>
+
+                            <!-- Task List -->
+                            <div id="taskList" class="mb-3"></div>
+
+                            <!-- Example Tasks -->
+                            <div class="example-tasks">
+                                <h6 class="fw-bold mb-3">
+                                    <i class="fas fa-lightbulb me-2"></i>Example Tasks
+                                </h6>
+                                <div class="example-task" onclick="addExampleTask('How many $2bn movies were released before 2020?')">
+                                    <strong>Counting:</strong> How many $2bn movies were released before 2020?
+                                </div>
+                                <div class="example-task" onclick="addExampleTask('Which is the earliest film that grossed over $1.5bn?')">
+                                    <strong>Finding:</strong> Which is the earliest film that grossed over $1.5bn?
+                                </div>
+                                <div class="example-task" onclick="addExampleTask('What is the correlation between Rank and Peak?')">
+                                    <strong>Statistics:</strong> What is the correlation between Rank and Peak?
+                                </div>
+                                <div class="example-task" onclick="addExampleTask('Draw a scatterplot of Rank and Peak with regression line')">
+                                    <strong>Visualization:</strong> Draw a scatterplot of Rank and Peak with regression line
+                                </div>
+                                <div class="example-task" onclick="addExampleTask('List the top 5 films by worldwide gross')">
+                                    <strong>Ranking:</strong> List the top 5 films by worldwide gross
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analyze Button -->
+                        <div class="text-center mb-4">
+                            <button class="btn btn-primary btn-lg" onclick="analyzeData()" id="analyzeBtn">
+                                <i class="fas fa-magic me-2"></i>Analyze Data
+                            </button>
+                        </div>
+
+                        <!-- Loading -->
+                        <div class="loading text-center" id="loading">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <h5>Analyzing your data...</h5>
+                            <p>This may take up to 3 minutes for complex analyses</p>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 100%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Results -->
+                        <div id="results" class="mt-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let tasks = [];
+
+        function addTask() {
+            const taskInput = document.getElementById('taskInput');
+            const task = taskInput.value.trim();
+            
+            if (task) {
+                tasks.push(task);
+                taskInput.value = '';
+                updateTaskList();
+            }
+        }
+
+        function addExampleTask(task) {
+            tasks.push(task);
+            updateTaskList();
+        }
+
+        function removeTask(index) {
+            tasks.splice(index, 1);
+            updateTaskList();
+        }
+
+        function updateTaskList() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+            
+            tasks.forEach((task, index) => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+                taskItem.innerHTML = `
+                    <span>${index + 1}. ${task}</span>
+                    <i class="fas fa-times remove-task" onclick="removeTask(${index})"></i>
+                `;
+                taskList.appendChild(taskItem);
+            });
+        }
+
+        async function analyzeData() {
+            if (tasks.length === 0) {
+                showAlert('Please add at least one analysis task.', 'warning');
+                return;
+            }
+
+            const url = document.getElementById('urlInput').value.trim();
+            const taskText = tasks.join('\n');
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('results').innerHTML = '';
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        task: taskText
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data.result, tasks);
+                } else {
+                    showAlert(data.error || 'Analysis failed. Please try again.', 'danger');
+                }
+            } catch (error) {
+                showAlert('Network error. Please check your connection and try again.', 'danger');
+                console.error('Error:', error);
+            } finally {
+                // Hide loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        function displayResults(result, originalTasks) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (Array.isArray(result)) {
+                // Handle array results (Wikipedia format)
+                let html = '<h4 class="mb-3"><i class="fas fa-chart-bar me-2"></i>Analysis Results</h4>';
+                
+                result.forEach((answer, index) => {
+                    if (index < originalTasks.length) {
+                        html += `
+                            <div class="result-card p-3">
+                                <h6 class="fw-bold text-primary">${originalTasks[index]}</h6>
+                                <div class="mt-2">
+                                    ${formatAnswer(answer)}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                resultsDiv.innerHTML = html;
+            } else if (typeof result === 'object') {
+                // Handle object results (High Court format)
+                let html = '<h4 class="mb-3"><i class="fas fa-chart-bar me-2"></i>Analysis Results</h4>';
+                
+                Object.entries(result).forEach(([question, answer]) => {
+                    html += `
+                        <div class="result-card p-3">
+                            <h6 class="fw-bold text-primary">${question}</h6>
+                            <div class="mt-2">
+                                ${formatAnswer(answer)}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                resultsDiv.innerHTML = html;
+            } else {
+                showAlert('Unexpected result format.', 'warning');
+            }
+        }
+
+        function formatAnswer(answer) {
+            if (answer === null || answer === undefined) {
+                return '<span class="text-muted">No data available</span>';
+            }
+            
+            if (typeof answer === 'string' && answer.startsWith('data:image/')) {
+                return `<div class="plot-container">
+                    <img src="${answer}" alt="Generated Plot" class="img-fluid">
+                </div>`;
+            }
+            
+            if (Array.isArray(answer)) {
+                return `<ul class="list-unstyled mb-0">
+                    ${answer.map(item => `<li><i class="fas fa-check text-success me-2"></i>${item}</li>`).join('')}
+                </ul>`;
+            }
+            
+            return `<span class="fw-bold">${answer}</span>`;
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            resultsDiv.appendChild(alertDiv);
+        }
+
+        // Enter key to add task
+        document.getElementById('taskInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+    </script>
+</body>
+</html> 
