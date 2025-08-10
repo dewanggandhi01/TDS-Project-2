@@ -126,9 +126,7 @@ Thumbs.db
 *.swo
 *~
 
-# Test files
-test_*.py
-*test*.py
+# Test artifacts
 TEST_RESULTS.md
 output.png
 
