@@ -1,5 +1,7 @@
-def format_answer(answer):
-    # Example: ensure JSON serializable
-    if isinstance(answer, set):
-        return list(answer)
-    return answer
+"""Deprecated top-level module.
+
+Please import from the app package instead:
+    from app.utils import format_answer
+"""
+
+from app.utils import *  # re-export for backward compatibility
